@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡密管理 · 失业饭碗测评</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:#f4ede1;color:#3a2c1e;padding:30px 16px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:24px;margin-bottom:6px;}
+  .sub{font-size:13px;color:#8a6f4d;margin-bottom:24px;}
+  .card{background:#fffdf8;border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(90,50,20,.08);}
+  .card h2{font-size:16px;color:#d9531e;margin-bottom:12px;}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  input{
+    border:1.5px solid #e0d2ba;border-radius:10px;padding:10px 14px;
+    font-size:15px;background:#faf5ea;outline:none;color:inherit;
+  }
+  input:focus{border-color:#d9531e;}
+  button{
+    background:linear-gradient(135deg,#e2601f,#d9531e);color:#fff;border:none;
+    border-radius:10px;padding:10px 22px;font-size:15px;font-weight:700;cursor:pointer;
+  }
+  button:active{transform:scale(.97);}
+  .gen-out{margin-top:12px;background:#3a2c1e;color:#ffe9d6;border-radius:10px;padding:14px;font-size:15px;line-height:1.9;display:none;white-space:pre-wrap;font-family:Consolas,monospace;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{background:#f7efe2;color:#8a6f4d;padding:9px 8px;text-align:left;}
+  td{padding:9px 8px;border-bottom:1px solid #f0e6d8;}
+  .st-full{color:#c0392b;font-weight:700;}
+  .st-ok{color:#1e8e3e;font-weight:700;}
+  .log{font-size:11px;color:#b9a88f;}
+  .err{color:#c0392b;font-size:14px;margin-bottom:16px;display:none;}
+  .refresh{background:#fff;border:1.5px solid #d8c8b0;color:#8a6f4d;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔑 卡密管理后台</h1>
+  <div class="sub">每个密码可完成 3 次完整测评 · 数据存储于 Supabase 云数据库</div>
+  <div class="err" id="err"></div>
+
+  <div class="card">
+    <h2>批量生成卡密</h2>
+    <div class="row">
+      <input id="keyInput" placeholder="管理密钥" style="width:220px" value="">
+      <input id="countInput" type="number" value="10" min="1" max="200" style="width:90px">
+      <button onclick="gen()">生成</button>
+      <button class="refresh" onclick="loadList()">刷新列表</button>
+    </div>
+    <div class="gen-out" id="genOut"></div>
+  </div>
+
+  <div class="card">
+    <h2>卡密列表 / 使用情况</h2>
+    <table id="tbl">
+      <thead><tr><th>密码</th><th>状态</th><th>最近使用</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const SUPABASE_URL = 'https://bdsyhjwesxxbgfzoxcac.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_itpxK_FH2Qhxc9YCgnWkVQ_mvQMKtHv';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function getKey(){ return $('keyInput').value.trim(); }
+function showErr(m){ const e=$('err'); e.textContent=m; e.style.display=m?'block':'none'; }
+function fmtTime(t){ return t ? new Date(t).toLocaleString('zh-CN') : '—'; }
+
+async function loadList(){
+  showErr('');
+  try{
+    const { data:rows, error } = await sb.rpc('admin_list_cards', { p_key:getKey() });
+    if(error){ showErr(error.message.includes('管理密钥') ? '管理密钥不对' : '请求失败：'+error.message); return; }
+    const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
+    const tb=$('tbl').querySelector('tbody');
+    tb.innerHTML=list.map(p=>{
+      const remain=p.max_uses-p.used_count;
+      const st=remain>0
+        ? '<span class="st-ok">剩余 '+remain+'/'+p.max_uses+'</span>'
+        : '<span class="st-full">已用完</span>';
+      return '<tr><td style="font-family:Consolas,monospace;font-weight:700">'+p.password+'</td><td>'+st+'</td><td class="log">'+fmtTime(p.last_used_at)+'</td></tr>';
+    }).join('') || '<tr><td colspan="3" class="log">暂无卡密</td></tr>';
+  }catch(e){ showErr('请求失败：'+e.message); }
+}
+async function gen(){
+  showErr('');
+  try{
+    const count=parseInt($('countInput').value)||10;
+    const { data:rows, error } = await sb.rpc('admin_create_cards', { p_key:getKey(), p_count:count });
+    if(error){ showErr(error.message); return; }
+    const out=$('genOut');
+    out.style.display='block';
+    out.textContent='新卡密（点击复制区）：\n'+rows.map(r=>r.password).join('\n');
+    loadList();
+  }catch(e){ showErr('请求失败：'+e.message); }
+}
+/* 从 URL 自动填入管理密钥 */
+const urlKey=new URLSearchParams(location.search).get('key');
+if(urlKey){ $('keyInput').value=urlKey; }
+loadList();
+</script>
+</body>
+</html>

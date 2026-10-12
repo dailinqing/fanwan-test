@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>测测你失业后靠什么吃饭</title>
+<style>
+  :root{
+    --ink:#3a2c1e; --ink2:#7a6a55; --accent:#d9531e; --card:#fffdf8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:linear-gradient(160deg,#f6d9b8 0%,#f3c29a 35%,#eec2c9 100%);
+    color:var(--ink);
+    display:flex;justify-content:center;
+    min-height:100vh;padding:16px 0;
+  }
+  .phone{
+    width:100%;max-width:420px;
+    background:var(--card);
+    border-radius:24px;
+    box-shadow:0 20px 60px rgba(90,50,20,.25);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    min-height:calc(100vh - 32px);
+    position:relative;
+  }
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 20px;font-size:12px;color:var(--ink2);
+    border-bottom:1px solid #f0e6d8;
+  }
+  .topbar .tag{border:1px solid #d8c8b0;border-radius:20px;padding:2px 10px;}
+  .page{flex:1;display:none;flex-direction:column;padding:24px 22px;overflow-y:auto;}
+  .page.active{display:flex;}
+  .quote{color:var(--accent);font-size:44px;line-height:1;font-weight:bold;}
+  .btn-main{
+    display:block;width:100%;
+    background:linear-gradient(135deg,#e2601f,#d9531e);
+    color:#fff;font-size:18px;font-weight:700;letter-spacing:4px;
+    border:none;border-radius:14px;padding:16px 0;
+    box-shadow:0 8px 20px rgba(217,83,30,.35);
+    cursor:pointer;transition:transform .15s;
+  }
+  .btn-main:active{transform:scale(.97);}
+  .btn-main.small{font-size:16px;letter-spacing:2px;padding:13px 0;}
+  .btn-ghost{
+    flex:1;background:#fff;border:1.5px solid #d8c8b0;color:#8a6f4d;
+    font-size:15px;font-weight:600;border-radius:14px;padding:13px 0;cursor:pointer;
+  }
+  .btn-ghost:active{background:#f7efe2;}
+  .footnote{margin-top:24px;font-size:11px;color:#b9a88f;text-align:center;line-height:1.8;}
+
+  /* 密码门 */
+  #gate{justify-content:center;text-align:center;}
+  #gate h1{font-size:26px;font-weight:800;margin-bottom:10px;}
+  #gate .sub{font-size:13px;color:var(--ink2);margin-bottom:26px;line-height:1.8;}
+  .pwd-input{
+    width:100%;border:1.5px solid #e0d2ba;border-radius:14px;
+    padding:15px 16px;font-size:18px;letter-spacing:3px;text-align:center;
+    color:var(--ink);background:#faf5ea;margin-bottom:12px;outline:none;
+  }
+  .pwd-input:focus{border-color:var(--accent);}
+  .gate-msg{font-size:13px;min-height:20px;margin-bottom:10px;}
+  .gate-msg.err{color:#c0392b;}
+  .gate-msg.ok{color:#1e8e3e;}
+
+  /* 封面 */
+  #cover{justify-content:center;text-align:center;}
+  #cover h1{font-size:38px;line-height:1.35;font-weight:800;margin:8px 0 24px;letter-spacing:2px;}
+  #cover h1 .hl{color:var(--accent);}
+  .cover-list{display:flex;flex-direction:column;gap:9px;align-items:center;margin-bottom:26px;}
+  .cover-list span{background:#f7efe2;color:#8a6f4d;font-size:13.5px;padding:6px 18px;border-radius:6px;}
+  .remain-tip{font-size:12px;color:#1e8e3e;background:#eaf6ee;border-radius:20px;padding:5px 14px;margin-bottom:16px;display:inline-block;}
+
+  /* 答题 */
+  .progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .progress-bar{flex:1;height:6px;background:#f0e4d2;border-radius:3px;overflow:hidden;}
+  .progress-fill{height:100%;width:0;background:linear-gradient(90deg,#e8842c,#d9531e);border-radius:3px;transition:width .35s;}
+  .progress-num{font-size:12px;color:var(--ink2);}
+  .q-title{font-size:19px;font-weight:700;line-height:1.65;margin-bottom:20px;}
+  .opt{
+    display:flex;align-items:flex-start;gap:12px;
+    background:#faf5ea;border:1.5px solid #efe4d0;border-radius:12px;
+    padding:13px 16px;margin-bottom:11px;font-size:14.5px;line-height:1.55;
+    cursor:pointer;transition:all .15s;
+  }
+  .opt:active{background:#fdeee2;border-color:var(--accent);}
+  .opt .key{
+    flex:none;width:25px;height:25px;border-radius:50%;
+    background:#eaddc6;color:#8a6f4d;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px;
+  }
+  .opt.chosen{background:#fdeee2;border-color:var(--accent);font-weight:600;}
+  .opt.chosen .key{background:var(--accent);color:#fff;}
+  .quiz-nav{display:flex;gap:10px;margin-top:8px;}
+  .quiz-nav .btn-ghost{flex:none;width:120px;}
+  .quiz-nav .hint{flex:1;font-size:11px;color:#b9a88f;align-self:center;text-align:right;line-height:1.6;}
+
+  /* 结果页 */
+  #result{align-items:center;text-align:center;}
+  .result-eyebrow{font-size:12px;color:var(--ink2);letter-spacing:2px;margin-bottom:14px;}
+  .hardness-box{width:100%;background:linear-gradient(135deg,#e2601f,#c94415);border-radius:16px;color:#fff;padding:16px;margin-bottom:16px;box-shadow:0 8px 22px rgba(217,83,30,.3);}
+  .hardness-box .num{font-size:40px;font-weight:800;line-height:1.1;}
+  .hardness-box .num small{font-size:16px;font-weight:600;}
+  .hardness-box .lab{font-size:12px;opacity:.85;margin-top:4px;letter-spacing:2px;}
+  .dim-chart{width:100%;background:#faf5ea;border-radius:14px;padding:14px 16px;margin-bottom:16px;text-align:left;}
+  .dim-chart h3{font-size:13px;color:var(--accent);margin-bottom:10px;letter-spacing:1px;}
+  .dim-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .dim-row:last-child{margin-bottom:0;}
+  .dim-name{flex:none;width:52px;font-size:12px;color:#8a6f4d;font-weight:600;}
+  .dim-track{flex:1;height:8px;background:#f0e4d2;border-radius:4px;overflow:hidden;}
+  .dim-fill{height:100%;background:linear-gradient(90deg,#e8842c,#d9531e);border-radius:4px;transition:width .8s;}
+  .dim-val{flex:none;width:34px;text-align:right;font-size:11px;color:#b9a88f;}
+  .result-card{
+    width:100%;
+    background:linear-gradient(150deg,#fff6e8 0%,#ffe9d6 55%,#ffd9dd 100%);
+    border-radius:20px;padding:26px 20px;margin-bottom:16px;
+    box-shadow:0 10px 30px rgba(200,120,60,.18);
+  }
+  .result-emoji{font-size:48px;line-height:1;}
+  .result-title{font-size:25px;font-weight:800;margin:12px 0 6px;letter-spacing:1px;}
+  .result-sub{font-size:13px;color:var(--accent);font-weight:700;margin-bottom:14px;}
+  .result-tags{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .result-tags span{
+    background:rgba(255,255,255,.75);border:1px solid #f0d5b8;
+    font-size:12px;color:#9a6b3a;padding:4px 12px;border-radius:20px;
+  }
+  .result-desc{
+    font-size:13.5px;line-height:1.9;color:#5c4630;text-align:justify;
+    background:rgba(255,255,255,.55);border-radius:12px;padding:13px 15px;
+  }
+  .info-box{width:100%;text-align:left;background:#faf5ea;border-radius:14px;padding:15px 17px;margin-bottom:13px;}
+  .info-box h3{font-size:13.5px;color:var(--accent);margin-bottom:8px;letter-spacing:1px;}
+  .info-box p,.info-box li{font-size:13px;line-height:1.85;color:#5c4630;}
+  .info-box li{margin-left:18px;}
+  .risk-box{background:#fdf3e3;border:1px dashed #e3c9a4;}
+  .risk-box h3{color:#b07b2e;}
+  .say-box{
+    width:100%;background:#3a2c1e;color:#ffe9d6;border-radius:14px;
+    padding:14px 16px;margin-bottom:16px;text-align:center;
+    font-size:14px;font-weight:600;letter-spacing:.5px;
+  }
+  .share-tip{
+    font-size:12px;color:var(--ink2);background:#f7efe2;
+    border-radius:10px;padding:10px 14px;margin-bottom:16px;line-height:1.7;width:100%;
+  }
+  .btn-row{display:flex;gap:10px;width:100%;margin-bottom:10px;}
+  .btn-row .btn-main{flex:1.4;}
+  #others{width:100%;text-align:left;display:none;}
+  #others.open{display:block;}
+  #others h3{font-size:13px;color:var(--ink2);margin:8px 0 10px;text-align:center;}
+  .other-item{
+    display:flex;align-items:center;gap:12px;background:#faf5ea;
+    border-radius:10px;padding:10px 14px;margin-bottom:8px;
+  }
+  .other-item .em{font-size:24px;}
+  .other-item .nm{font-size:14px;font-weight:700;}
+  .other-item .ds{font-size:12px;color:var(--ink2);line-height:1.5;}
+
+  /* 长图预览浮层 */
+  #imgOverlay{
+    display:none;position:fixed;inset:0;z-index:60;
+    background:rgba(30,20,10,.85);
+    flex-direction:column;align-items:center;
+    padding:20px 16px;overflow-y:auto;
+  }
+  #imgOverlay.open{display:flex;}
+  #imgOverlay .tip{
+    color:#ffe9d6;font-size:14px;font-weight:700;text-align:center;
+    margin-bottom:12px;line-height:1.7;
+  }
+  #imgOverlay img{
+    width:100%;max-width:380px;border-radius:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.5);
+  }
+  #imgOverlay .ov-btns{display:flex;gap:10px;margin-top:14px;width:100%;max-width:380px;}
+  #imgOverlay .btn-ghost{color:#ffe9d6;background:transparent;border-color:#8a6f4d;}
+  #imgOverlay .btn-main{flex:1.4;}
+
+  /* 弹窗 */
+  .modal-mask{
+    display:none;position:fixed;inset:0;z-index:50;
+    background:rgba(30,20,10,.55);
+    align-items:center;justify-content:center;padding:24px;
+  }
+  .modal-mask.open{display:flex;}
+  .modal{
+    width:100%;max-width:340px;background:#fffdf8;border-radius:18px;
+    padding:24px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal h3{font-size:18px;font-weight:800;margin-bottom:12px;color:var(--accent);}
+  .modal p{font-size:13.5px;line-height:1.9;color:#5c4630;text-align:left;}
+  .modal .btn-main{margin-top:16px;padding:12px 0;font-size:15px;letter-spacing:2px;}
+
+  /* toast */
+  #toast{
+    position:fixed;left:50%;bottom:60px;transform:translateX(-50%);
+    background:rgba(30,20,10,.9);color:#ffe9d6;font-size:13px;
+    padding:10px 20px;border-radius:24px;z-index:70;
+    display:none;max-width:80%;text-align:center;
+  }
+
+  /* 好评悬浮按钮 */
+  #giftFab{
+    position:fixed;right:14px;bottom:18px;z-index:40;
+    background:linear-gradient(135deg,#e2601f,#d9531e);color:#fff;
+    font-size:13px;font-weight:700;border:none;border-radius:24px;
+    padding:10px 16px;box-shadow:0 6px 18px rgba(217,83,30,.4);cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="topbar">
+    <span class="tag">趣味心理测试</span>
+    <span id="pageNo">NO.001</span>
+  </div>
+
+  <!-- 1. 密码门 -->
+  <div class="page" id="gate">
+    <h1>🔑 凭密码进入测评</h1>
+    <div class="sub">本测评采用邀请制<br>每个密码可完成 <b>3 次</b>完整测评</div>
+    <input class="pwd-input" id="pwdInput" placeholder="请输入测评密码" autocomplete="off">
+    <div class="gate-msg" id="gateMsg"></div>
+    <button class="btn-main" id="btnVerify">验证密码 →</button>
+    <div class="footnote">没有密码？请联系分享给你的人获取</div>
+  </div>
+
+  <!-- 2. 封面 -->
+  <div class="page" id="cover">
+    <div class="quote" style="text-align:left;">“</div>
+    <h1>测测你失业后<br>靠<span class="hl">什么吃饭</span></h1>
+    <div class="cover-list">
+      <span>12 道真实情境题 · 5 维饭碗模型</span>
+      <span>10 种饭碗结局 · 支持返回修改答案</span>
+      <span>解锁你的饭碗硬度指数</span>
+    </div>
+    <div class="remain-tip" id="remainTip"></div>
+    <button class="btn-main" id="btnStart">开始测评 →</button>
+    <div class="footnote">参考「职业倾向 × 风险偏好 × 社会支持」模型设计<br>趣味心理测试 · 仅供娱乐参考</div>
+  </div>
+
+  <!-- 3. 答题 -->
+  <div class="page" id="quiz">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+      <div class="progress-num" id="pnum">1/12</div>
+    </div>
+    <div class="q-title" id="qTitle"></div>
+    <div id="optBox"></div>
+    <div class="quiz-nav">
+      <button class="btn-ghost" id="btnPrev">← 上一题</button>
+      <div class="hint">选过的题可随时返回修改</div>
+    </div>
+  </div>
+
+  <!-- 4. 结果 -->
+  <div class="page" id="result">
+    <div class="result-eyebrow">— 你的饭碗已解锁 —</div>
+    <div class="hardness-box">
+      <div class="num"><span id="hNum">0</span><small> 分</small></div>
+      <div class="lab">饭碗硬度指数 · 越高说明你的饭碗越抗造</div>
+    </div>
+    <div class="dim-chart">
+      <h3>你的五维饭碗构成</h3>
+      <div id="dimChart"></div>
+    </div>
+    <div class="result-card">
+      <div class="result-emoji" id="rEmoji"></div>
+      <div class="result-title" id="rTitle"></div>
+      <div class="result-sub" id="rSub"></div>
+      <div class="result-tags" id="rTags"></div>
+      <div class="result-desc" id="rDesc"></div>
+    </div>
+    <div class="info-box">
+      <h3>🍚 你的饭碗长这样</h3>
+      <p id="rBowl"></p>
+    </div>
+    <div class="info-box risk-box">
+      <h3>⚠️ 给你的风险提示</h3>
+      <p id="rRisk"></p>
+    </div>
+    <div class="info-box">
+      <h3>🧭 你的躺赢路径</h3>
+      <ul id="rPath"></ul>
+    </div>
+    <div class="say-box" id="rSay"></div>
+    <div class="share-tip">📸 保存长图发朋友圈，或复制链接发给朋友，看看谁和你端同一个饭碗。</div>
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnSaveImg">🖼 保存长图</button>
+      <button class="btn-ghost" id="btnCopyLink">🔗 复制结果链接</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ghost" id="btnOthers">看其他饭碗</button>
+      <button class="btn-main small" id="btnAgain">再测一次</button>
+    </div>
+    <div id="others">
+      <h3>全部饭碗图鉴</h3>
+      <div id="othersList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 长图预览浮层 -->
+<div id="imgOverlay">
+  <div class="tip" id="imgTip">长按图片 → 保存到手机相册</div>
+  <img id="longImg" alt="测评结果长图">
+  <div class="ov-btns">
+    <button class="btn-ghost" id="btnOvClose">关闭</button>
+    <button class="btn-main small" id="btnOvDownload">下载图片</button>
+  </div>
+</div>
+
+<!-- 通用弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <h3 id="mTitle"></h3>
+    <p id="mBody"></p>
+    <button class="btn-main" id="mClose">我知道了</button>
+  </div>
+</div>
+
+<!-- 好评有礼弹窗 -->
+<div class="modal-mask" id="giftMask">
+  <div class="modal">
+    <h3>🎁 好评有礼</h3>
+    <p>觉得这个测评又准又好笑？<br><br>
+    ① 把结果长图分享到朋友圈 / 群里<br>
+    ② 给我们一个五星好评并截图<br><br>
+    凭截图联系客服，免费领取 <b>《副业避坑指南》</b> 一份！<br><br>
+    客服微信：<b>kefu-xXXXXXXX</b>（示例占位，请替换）</p>
+    <button class="btn-main" id="giftClose">去好评 →</button>
+  </div>
+</div>
+
+<button id="giftFab">🎁 好评有礼</button>
+<div id="toast"></div>
+
+<!-- Supabase JS SDK（公网版：后端/数据库由 Supabase 托管） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* ===== Supabase 配置（anon key 仅公开权限，可放前端） ===== */
+const SUPABASE_URL = 'https://bdsyhjwesxxbgfzoxcac.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_itpxK_FH2Qhxc9YCgnWkVQ_mvQMKtHv';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* 兼容层：把原 /api/* 请求映射到 Supabase RPC */
+async function api(path, data){
+  try{
+    const fn = path === '/api/finish' ? 'consume_card' : 'check_card';
+    const { data: rows, error } = await sb.rpc(fn, { p_password: (data||{}).password || '' });
+    if(error){ return { ok:false, message:'服务开小差了，请稍后再试' }; }
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if(!row){ return { ok:false, message:'服务开小差了，请稍后再试' }; }
+    return { ok: row.ok, remaining: row.remaining, message: row.message };
+  }catch(e){ return { ok:false, message:'网络异常，请稍后再试' }; }
+}
+</script>
+<script>
+/* ===== 测评数据 ===== */
+const DIMS = {G:"实干力",B:"表达力",M:"稳健力",R:"人脉力",C:"归园力"};
+const DIM_ORDER = ["G","B","M","R","C"];
+const BRANCH = {G:["M","B"],B:["G","R"],M:["C","G"],R:["B","M"],C:["G","R"]};
+
+const QUESTIONS = [
+  {t:"周一早上十点，别人的工位都在开会，而你已经不在工位上了。你实际在干嘛：",
+   o:[
+    {s:"还在睡——先把欠自己的觉补回来，天塌不下来",w:{C:2}},
+    {s:"上午海投了 30 份简历，下午研究失业金怎么领，安排得明明白白",w:{M:2}},
+    {s:"列了张“手艺变现清单”：我会的这些玩意儿，哪个能马上换成钱",w:{G:2}},
+    {s:"发朋友圈官宣“灵活就业第一天”，仪式感必须先拉满",w:{B:2}},
+    {s:"在兄弟群里挨个问：你们公司还缺人不？先给我留个坑",w:{R:2}}
+   ]},
+  {t:"赔偿金加存款，手里一共 8 万块。这笔钱你最先怎么安排：",
+   o:[
+    {s:"先把社保续上、圈出 6 个月生活费——这是底线，别的免谈",w:{M:2}},
+    {s:"拿一小笔进货，先把闲鱼和周末市集支起来试试水",w:{G:2}},
+    {s:"稳定器、麦克风、补光灯安排上——账号今晚就开张",w:{B:2}},
+    {s:"订个包间，请最关键的几个朋友吃饭，消息放出去机会才会来",w:{R:2}},
+    {s:"原封不动存着——这钱是我回老家的底气",w:{C:2}}
+   ]},
+  {t:"深夜刷手机，哪条新闻让你最上头：",
+   o:[
+    {s:"“35 岁被裁大哥跑网约车，月入过万还清了房贷”",w:{G:2}},
+    {s:"“00 后裸辞拍视频，百万粉广告接到手软”",w:{B:2}},
+    {s:"“小镇青年考上乡镇公务员：月薪四千，但我睡得着了”",w:{M:2}},
+    {s:"“他失业半年，靠前同事一条内推，薪资翻了 50%”",w:{R:2}},
+    {s:"“夫妻辞职回县城开面馆，一年后提了辆车”",w:{C:2}}
+   ]},
+  {t:"聊到“考公考编”，你心里的真实弹幕是：",
+   o:[
+    {s:"考！宇宙的尽头是编制，35 岁前最后的机会了",w:{M:2}},
+    {s:"编制？我的手艺就是我的编制",w:{G:2}},
+    {s:"让我坐办公室打卡，不如让我对着镜头说话",w:{B:2}},
+    {s:"我爸说认识人社局的——有些路，笔试管不着",w:{R:2}},
+    {s:"回村当个村干部也行，守家在地心里踏实",w:{C:2}}
+   ]},
+  {t:"你的“安全存款线”是多少个月的生活费：",
+   o:[
+    {s:"24 个月起步，存不够这个数我睡不着觉",w:{M:2}},
+    {s:"3 个月就敢动身——手艺在身上，走到哪都饿不死",w:{G:2}},
+    {s:"0 个月也敢开干：镜头一开，钱包就在路上",w:{B:2}},
+    {s:"存款数字不重要，重要的是通讯录里有没有能拉你一把的人",w:{R:2}},
+    {s:"老家有房有地，这条线直接打五折",w:{C:2}}
+   ]},
+  {t:"家庭聚会，二姨端着杯子走过来：“现在干啥呢？”你说：",
+   o:[
+    {s:"“在备考。”——其实书还没拆封，但场面先稳住",w:{M:2}},
+    {s:"“跟朋友干点小生意。”——把摊位说成了公司",w:{G:2}},
+    {s:"“做自媒体呢。”——说得越玄乎越好，她也不敢细问",w:{B:2}},
+    {s:"“正找工作，姨，您单位今年还招人不？”——顺便把路子问了",w:{R:2}},
+    {s:"“回老家歇一阵。”——说完自己先松了口气",w:{C:2}}
+   ]},
+  {t:"失业第三个月，存款在掉。一份“过渡班”你最接得住的是：",
+   o:[
+    {s:"跑网约车/送外卖/做代驾，多劳多得，先让现金流转起来",w:{G:2}},
+    {s:"接受降薪回老本行，稳定比什么都重要",w:{M:2}},
+    {s:"在家剪视频、写文案、运营账号——先把号做起来",w:{B:2}},
+    {s:"去朋友公司帮忙搭把手，钱少点，但人情都在走动",w:{R:2}},
+    {s:"日结零工，干一天休三天，主打一个灵魂自由",w:{C:2}}
+   ]},
+  {t:"打开手机，最常驻你屏幕的三个 App 是哪组：",
+   o:[
+    {s:"记账本、银行、个人所得税——每一笔都心里有数",w:{M:2}},
+    {s:"剪映、抖音、小红书——素材库比相册还大",w:{B:2}},
+    {s:"微信、脉脉、BOSS 直聘——置顶了八个群",w:{R:2}},
+    {s:"1688、闲鱼、地图——白天蹲货源，晚上看夜市人流",w:{G:2}},
+    {s:"天气（置顶的是老家）、12306、县城租房——退路也在规划内",w:{C:2}}
+   ]},
+  {t:"凌晨两点的 emo 时刻，哪句话最扎你：",
+   o:[
+    {s:"“存款还够撑几个月？”",w:{M:2}},
+    {s:"“你那点手艺，真的有人买单吗？”",w:{G:2}},
+    {s:"“拍了十条视频，播放量还没点赞多。”",w:{B:2}},
+    {s:"“通讯录两千人，没一个能开口借钱的。”",w:{R:2}},
+    {s:"“留在大城市，到底图什么？”",w:{C:2}}
+   ]},
+  {t:"五年后的同学聚会，你最想脱口而出的一句话：",
+   o:[
+    {s:"“我那家店，现在开了三家分店。”",w:{G:2}},
+    {s:"“我账号百万粉了，你们刷到过吧。”",w:{B:2}},
+    {s:"“我上岸了。”——三个字，比什么名片都响",w:{M:2}},
+    {s:"“我现在这个公司，就是我当年帮过的兄弟开的。”",w:{R:2}},
+    {s:"“我回村了，院子给你们留了两间房。”",w:{C:2}}
+   ]},
+  {t:"面前有个“看起来不错但拿不准”的机会（合伙开店/新赛道），你的第一反应：",
+   o:[
+    {s:"先算账：最坏亏多少？亏得起再干",w:{M:2}},
+    {s:"先下水：边干边看，机会是干出来的不是想出来的",w:{G:2}},
+    {s:"先开拍：把整个过程做成内容，干不成都涨粉",w:{B:2}},
+    {s:"先拉人：找个懂行的朋友一起入伙，风险共担",w:{R:2}},
+    {s:"先算了：折腾这么多年，我想过点确定的日子",w:{C:2}}
+   ]},
+  {t:"对你来说，“这日子成了”最接近哪个画面：",
+   o:[
+    {s:"有个自己的店/牌子，别人提起你会说“他家东西行”",w:{G:2}},
+    {s:"你说的话有人听，你的视频有人蹲着等更新",w:{B:2}},
+    {s:"上岸或财务安全：再也不用为钱失眠",w:{M:2}},
+    {s:"你的酒席上，坐满一桌真心来撑场的人",w:{R:2}},
+    {s:"有个院子，种菜养狗，晚上十点就困了",w:{C:2}}
+   ]}
+];
+
+const RESULTS = {
+  "G_M":{emoji:"🌭",title:"铁算盘小老板",main:"实干型",
+    tags:["手艺变现","成本表随身","天生做买卖"],
+    desc:"别人看你是摆摊的，你知道自己是做生意的。凌晨四点的批发市场你能砍下价，收摊后的小账本记得比会计还细：烤肠卖多少根回本、柠檬茶毛利率几个点，你门儿清。你以为你在摆摊，其实你在做天使轮。",
+    bowl:"主饭碗是小生意＋手艺变现：一支成本表走天下，先算得清，才赚得到。",
+    risk:"别把摊位当终点——模型跑通就复制。现金流留足，本钱别全压在货上。",
+    path:["选一个低损耗、高复购的品类试水（小吃＞服饰＞杂货）","认真记 30 天账，找出你的“暴利款”","单点跑通后：第二家摊位、代加工、或上线小程序接单"],
+    say:"我失业了，但我在筹备天使轮。"},
+  "G_B":{emoji:"🔥",title:"烟火流量王",main:"实干型",
+    tags:["手上有活","敢出镜","街头顶流预备役"],
+    desc:"你是那种“手上有活儿还敢出镜”的人。别人摆摊只赚摊位的钱，你摊位边上支个手机，摊位赚一份、流量赚一份。淀粉肠西施、炸串刺客、煎饼界显眼包——下一个街头顶流，就是你。",
+    bowl:"主饭碗是手艺＋内容双份收入：线下出摊赚现金，线上记录赚流量。",
+    risk:"镜头放不开，等于浪费一半天赋；但别为了拍视频耽误出品，味道塌了全塌。",
+    path:["先把手艺做到你们街区前三——这是根","固定机位记录出摊日常，坚持日更 30 天","打造一个记忆点：一句口号、一个造型、一个招牌动作"],
+    say:"本人已入驻夜市，欢迎线下面基。"},
+  "B_G":{emoji:"🎬",title:"干货整活家",main:"表达型",
+    tags:["会干还会讲","内容有货","天生的记录者"],
+    desc:"你不是纯嘴皮子，你是“会干还会讲”。同样学一门手艺，别人学会就完了，你能把它讲成课、拍成系列。你的失业期在你的镜头里不是低谷，是《重生之我在家搞钱》第一季。",
+    bowl:"主饭碗是内容创作：以真实经历为脚本，一边干一边拍——干，是你的护城河。",
+    risk:"最大的坑是只拍不干：内容没干货，火三秒就凉。另外，低粉期别急着接烂广告。",
+    path:["选一件你真能上手的事，边干边拍，过程即内容","干货与整活四六开：干货立人设，整活涨播放","满一万粉再谈变现，前期只打磨选题手感"],
+    say:"关注我，看一个普通人怎么把日子过成节目。"},
+  "B_R":{emoji:"🎤",title:"人间气氛组",main:"表达型",
+    tags:["饭局灵魂","群聊段子手","自带流量"],
+    desc:"你是饭局的灵魂、群里的段子手、朋友圈的点赞王。你失业的消息发出去三分钟，评论区能排出一场小型招聘会。你的变现路径从来不是投简历，是让全世界都想帮你。",
+    bowl:"主饭碗是“被看见”的能力：社群运营、探店、撮合对接——哪儿需要气氛，哪儿就是你的工位。",
+    risk:"热闹是资产也是消耗：别把人脉只用在聊天上，要落在具体的事里。",
+    path:["把朋友圈盘一遍，按“能干活/能引荐/能同行”分类","选一个细分领域做“消息中枢”：探店号、社群、对接群","每次帮人对接都沉淀成口碑——你的征信就是朋友圈"],
+    say:"本人可吹、可捧、可对接资源，欢迎咨询。"},
+  "M_C":{emoji:"💰",title:"躺平规划师",main:"稳健型",
+    tags:["账都算完了","节能模式","阶段性退休"],
+    desc:"你早就偷偷把账算完了：老家有房、存款有数、每月最低开销门儿清。别人的失业叫失业，你的叫“阶段性退休”。你不是不上进，你只是把人生调成了节能模式——低功耗，长续航。",
+    bowl:"主饭碗是存款＋低欲望结构：利息打底，小院降成本，副业只求覆盖奶茶钱。",
+    risk:"最大的风险不是躺，是“躺得没规划”：通胀、意外、社保断缴，都要提前圈出来。",
+    path:["存款分三份：活钱、稳钱、长钱，先保 24 个月安全垫","社保千万别断，这是你最低配的“编制”","选一座生活成本低的城安放自己，副业随缘但不为零"],
+    say:"不是我失业了，是我退休提前了。"},
+  "M_G":{emoji:"📊",title:"稳健搞钱人",main:"稳健型",
+    tags:["钱生钱","小步试错","永不 all in"],
+    desc:"你是“钱要生钱，事要试水”的双修选手。理财你有纪律，副业你有规划，每一步都留后手。别人赌风口，你攒雪球——坡很长，雪很湿，你急什么？",
+    bowl:"主饭碗是“资产＋小生意”双引擎：现金流打底，利润滚进下一次尝试。",
+    risk:"稳是你的铠甲也是你的天花板：机会来了别因为“再算算”而错过，试错成本要敢花。",
+    path:["主业或接单现金流打底，先让收入不断","小成本验证一门生意，单笔亏损设上限","利润滚存、永不满仓——复利才是你的主场"],
+    say:"慢慢变富，也是一种野心。"},
+  "R_B":{emoji:"🍻",title:"饭局显眼包",main:"人脉型",
+    tags:["多个朋友多条路","自带气氛","走到哪都吃香"],
+    desc:"你的人生哲学：多个朋友多条路。你失业后第一个打开的不是招聘软件，是通讯录。你自带气氛，大家愿意帮你，也愿意请你吃饭——你管这个叫资源整合，别人管这个叫人缘好。",
+    bowl:"主饭碗是“人愿意帮你”：内推、合伙、搭伙做生意——你的机会都在人身上。",
+    risk:"人情是账户不是提款机：只取不存，再好的关系也会透支。",
+    path:["列出你的“贵人清单”，十个以内，重点维护","大方开口，别怕欠人情——开口是信任的开始","受了帮记得还：一次靠谱的回报，胜过十顿饭局"],
+    say:"本人求职不投简历，只走内推。"},
+  "R_M":{emoji:"🤝",title:"人脉投资人",main:"人脉型",
+    tags:["饭局即路演","心里有本人情账","长期主义"],
+    desc:"你的每一顿饭都是投资。谁将来用得上、谁值得深交、谁只是点赞之交，你心里有一张看不见的表格。你不是世故，你是明白：这个时代最稳的资产，是别人对你的信任。",
+    bowl:"主饭碗是信任网络：撮合、中介、合伙人——别人靠简历，你靠推荐。",
+    risk:"别把所有关系押在“有用”上——纯功利的人脉网，崩起来也最快。",
+    path:["把人脉当资产分层运营：核心层每月走动，外围层节日问候","每月固定认识两个新朋友，跨行业的优先","先给予后索取——你的每一笔“投喂”都在生息"],
+    say:"我的简历，存在朋友们的嘴里。"},
+  "C_G":{emoji:"🌾",title:"新农人主理人",main:"归园型",
+    tags:["真想干","回村创业","蓝海选手"],
+    desc:"你不是逃避，你是真想干。城里卷不动的事，回村反而是一片蓝海：一亩菜地、一个院子、一条没被拍烂的短视频赛道。别人以为你回去躺，其实你回去创业。",
+    bowl:"主饭碗是土地＋手艺：种植、养殖、农家院、乡村电商——地里能长出钱。",
+    risk:"先住够一个月再投入：你爱的是田园还是滤镜，得验证。农业周期长，别押上全部积蓄。",
+    path:["先回村住一个月，确认自己是真干不是真逃","从一亩地、一个院子的小循环开始，别急着承包","顺手拍“新农人日常”——产品和流量两条腿走路"],
+    say:"回村不是退路，是我的主场。"},
+  "C_R":{emoji:"🏡",title:"村里红人",main:"归园型",
+    tags:["熟人社会如鱼得水","有本事的文化人","全村的希望"],
+    desc:"在大城市你是透明人，回了村你是“有本事的文化人”。红白喜事你能主持，邻里纠纷你能劝，村口小卖部都知道你见过世面。你的饭碗不是某个职业，是整个熟人社会对你的认可。",
+    bowl:"主饭碗是熟人网络：村里的电商代卖、红白喜事、政策代办——人情就是你的营业执照。",
+    risk:"熟人社会的人情是双向的：帮了忙别嫌亏，欠了情别赖账，口碑在村里传得比 5G 还快。",
+    path:["先把村里的人情走一遍——三个月，串门比投简历有用","盘点村里的活儿：谁家货卖不出去、什么事没人牵头","做村里第一个“现代化节点”：帮全村代卖第一单"],
+    say:"城市容不下我，村里抢着要我。"}
+};
+
+/* ===== 全局状态 ===== */
+let current = 0;
+let answers = new Array(QUESTIONS.length).fill(null);
+let myPassword = sessionStorage.getItem('fw_pwd') || '';
+let myRemaining = null;
+let lastResultKey = '';
+let lastHardness = 0;
+let lastPcts = [];
+
+const $ = id => document.getElementById(id);
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.style.display='none',2200);
+}
+function openModal(title, body){
+  $('mTitle').textContent=title; $('mBody').innerHTML=body;
+  $('modalMask').classList.add('open');
+}
+async function api(path, data){
+  try{
+    const r = await fetch(path, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(data||{})
+    });
+    return await r.json();
+  }catch(e){ return {ok:false, message:'网络异常，请稍后再试'}; }
+}
+
+/* ===== 1. 密码门 ===== */
+async function verifyPwd(){
+  const pwd = $('pwdInput').value.trim().toUpperCase();
+  const msg = $('gateMsg');
+  if(!pwd){ msg.className='gate-msg err'; msg.textContent='请输入密码'; return; }
+  msg.className='gate-msg'; msg.textContent='验证中…';
+  const r = await api('/api/verify', {password:pwd});
+  if(!r.ok){ msg.className='gate-msg err'; msg.textContent=r.message; return; }
+  myPassword = pwd; myRemaining = r.remaining;
+  sessionStorage.setItem('fw_pwd', pwd);
+  msg.className='gate-msg ok'; msg.textContent='验证通过！';
+  setTimeout(enterCover, 400);
+}
+function enterCover(){
+  $('remainTip').textContent = `当前密码剩余 ${myRemaining} 次完整测评（共 3 次）`;
+  showPage('cover');
+}
+
+/* ===== 2. 答题（支持返回上一题） ===== */
+function calcScores(){
+  const s = {G:0,B:0,M:0,R:0,C:0};
+  answers.forEach((ai,qi)=>{
+    if(ai===null) return;
+    const w = QUESTIONS[qi].o[ai].w;
+    for(const k in w) s[k]+=w[k];
+  });
+  return s;
+}
+function dimMax(){
+  const total={G:0,B:0,M:0,R:0,C:0};
+  QUESTIONS.forEach(q=>{
+    for(const k in total){
+      let best=0;
+      q.o.forEach(o=>{ if(o.w[k]&&o.w[k]>best) best=o.w[k]; });
+      total[k]+=best;
+    }
+  });
+  return total;
+}
+const MAXDIM = dimMax();
+
+function renderQ(){
+  const q=QUESTIONS[current];
+  $('qTitle').textContent=q.t;
+  $('pnum').textContent=(current+1)+"/12";
+  $('pfill').style.width=(current/12*100)+"%";
+  $('btnPrev').style.visibility = current===0 ? 'hidden' : 'visible';
+  const box=$('optBox');
+  box.innerHTML="";
+  q.o.forEach((opt,i)=>{
+    const div=document.createElement('div');
+    div.className='opt'+(answers[current]===i?' chosen':'');
+    div.innerHTML='<span class="key">'+String.fromCharCode(65+i)+'</span><span>'+opt.s+'</span>';
+    div.onclick=()=>{
+      answers[current]=i;
+      box.querySelectorAll('.opt').forEach((el,j)=>el.classList.toggle('chosen', j===i));
+      setTimeout(()=>{ if(current<11){ current++; renderQ(); } else { finishQuiz(); } },220);
+    };
+    box.appendChild(div);
+  });
+}
+function goPrev(){ if(current>0){ current--; renderQ(); } }
+
+/* ===== 3. 完成并出结果 ===== */
+async function finishQuiz(){
+  if(answers.some(a=>a===null)){ toast('还有题目没答完'); return; }
+  /* 本地先算，服务端扣次数 */
+  if(myPassword){
+    const r = await api('/api/finish', {password:myPassword});
+    if(!r.ok){ openModal('提示', r.message + '<br><br>如需继续测评，请获取新密码。'); return; }
+    myRemaining = r.remaining;
+  }
+  const res = computeResult();
+  renderResultUI(res.key, res.hardness, res.pcts);
+}
+
+function computeResult(){
+  const s = calcScores();
+  let top="G";
+  DIM_ORDER.forEach(d=>{ if(s[d]>s[top]) top=d; });
+  const cands=BRANCH[top];
+  const branch = s[cands[0]]>=s[cands[1]] ? cands[0] : cands[1];
+  const key = top+"_"+branch;
+  const hardness = Math.min(98,Math.max(30,Math.round(
+    (s[top]+s[branch]*0.5)/(MAXDIM[top]+MAXDIM[branch]*0.5)*100)));
+  const pcts = DIM_ORDER.map(d=>Math.min(100,Math.round(s[d]/MAXDIM[d]*100)));
+  return {key, hardness, pcts};
+}
+
+function renderResultUI(key, hardness, pcts){
+  lastResultKey=key; lastHardness=hardness; lastPcts=pcts;
+  const [top, branch] = key.split('_');
+  const r=RESULTS[key];
+
+  animateNum(hardness);
+  $('dimChart').innerHTML = DIM_ORDER.map((d,i)=>
+    '<div class="dim-row"><span class="dim-name">'+DIMS[d]+'</span>'+
+    '<div class="dim-track"><div class="dim-fill" style="width:'+pcts[i]+'%"></div></div>'+
+    '<span class="dim-val">'+pcts[i]+'%</span></div>').join('');
+  $('rEmoji').textContent=r.emoji;
+  $('rTitle').textContent=r.title;
+  $('rSub').textContent='主型·'+DIMS[top]+' × 辅型·'+DIMS[branch]+'（'+r.main+'饭碗）';
+  $('rTags').innerHTML=r.tags.map(t=>'<span>'+t+'</span>').join('');
+  $('rDesc').textContent=r.desc;
+  $('rBowl').textContent=r.bowl;
+  $('rRisk').textContent=r.risk;
+  $('rPath').innerHTML=r.path.map(p=>'<li>'+p+'</li>').join('');
+  $('rSay').textContent='“'+r.say+'”';
+  $('othersList').innerHTML=Object.keys(RESULTS)
+    .filter(k=>k!==key)
+    .map(k=>{
+      const o=RESULTS[k];
+      return '<div class="other-item"><span class="em">'+o.emoji+'</span><span>'+
+        '<span class="nm">'+o.title+'</span><br><span class="ds">'+o.tags.join(' · ')+'</span></span></div>';
+    }).join('');
+  $('others').classList.remove('open');
+  showPage('result');
+}
+
+function animateNum(target){
+  const el=$('hNum'); let n=0;
+  const step=Math.max(1,Math.round(target/30));
+  const timer=setInterval(()=>{
+    n+=step;
+    if(n>=target){ n=target; clearInterval(timer); }
+    el.textContent=n;
+  },30);
+}
+
+/* ===== 4. 长图保存 ===== */
+function wrapLines(ctx, text, maxW){
+  const lines=[]; let line='';
+  for(const ch of text){
+    if(ctx.measureText(line+ch).width>maxW){ lines.push(line); line=ch; }
+    else line+=ch;
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+function drawLongImage(){
+  const r=RESULTS[lastResultKey];
+  const [top,branch]=lastResultKey.split('_');
+  const W=750, PAD=50, scale=2;
+  const cv=document.createElement('canvas');
+  const ctx=cv.getContext('2d');
+  ctx.textBaseline='alphabetic';
+  /* 先量高度 */
+  const meas=cv.getContext('2d');
+  meas.font='22px sans-serif';
+  const wrapW=W-PAD*2-36;
+  const descLines=wrapLines(meas,r.desc,wrapW);
+  const bowlLines=wrapLines(meas,r.bowl,wrapW);
+  const riskLines=wrapLines(meas,r.risk,wrapW);
+  const pathLines=r.path.flatMap((p,i)=>wrapLines(meas,(i+1)+'. '+p,wrapW-10));
+  const sayLines=wrapLines(meas,'“'+r.say+'”',wrapW);
+
+  let H=0;
+  H+=170;                       /* 头部 */
+  H+=60+80+40+46+16;            /* emoji/标题/副标 */
+  H+=52;                        /* 标签 */
+  H+=150;                       /* 硬度 */
+  H+=60+DIM_ORDER.length*36+30; /* 五维 */
+  H+=30+descLines.length*38+36;
+  H+=56+bowlLines.length*36+24;
+  H+=56+riskLines.length*36+24;
+  H+=56+pathLines.length*36+24;
+  H+=40+sayLines.length*40+30;
+  H+=110;                       /* 底部 */
+  cv.width=W*scale; cv.height=H*scale;
+  ctx.scale(scale,scale);
+
+  /* 背景 */
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#fff6e8'); bg.addColorStop(.6,'#ffe9d6'); bg.addColorStop(1,'#ffd9dd');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  let y=0;
+  /* 头部 */
+  const hg=ctx.createLinearGradient(0,0,W,170);
+  hg.addColorStop(0,'#e2601f'); hg.addColorStop(1,'#c94415');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,W,170);
+  ctx.fillStyle='#fff'; ctx.textAlign='center';
+  ctx.font='800 44px sans-serif';
+  ctx.fillText('测测你失业后靠什么吃饭', W/2, 78);
+  ctx.font='22px sans-serif'; ctx.globalAlpha=.9;
+  ctx.fillText('· 饭碗测评报告 ·', W/2, 122);
+  ctx.globalAlpha=1;
+  y=230;
+
+  /* 结果主体 */
+  ctx.font='64px sans-serif';
+  ctx.fillText(r.emoji, W/2, y+40); y+=110;
+  ctx.fillStyle='#3a2c1e'; ctx.font='800 56px sans-serif';
+  ctx.fillText(r.title, W/2, y+40); y+=80;
+  ctx.fillStyle='#d9531e'; ctx.font='700 26px sans-serif';
+  ctx.fillText('主型·'+DIMS[top]+' × 辅型·'+DIMS[branch]+'（'+r.main+'饭碗）', W/2, y+16); y+=70;
+
+  /* 标签 */
+  ctx.font='22px sans-serif';
+  const tagGap=14, tagPad=22, tagH=46;
+  let tw=0; r.tags.forEach(t=>tw+=ctx.measureText(t).width+tagPad*2+tagGap);
+  let tx=(W-tw+tagGap)/2;
+  r.tags.forEach(t=>{
+    const w=ctx.measureText(t).width+tagPad*2;
+    ctx.fillStyle='rgba(255,255,255,.8)';
+    roundRect(ctx,tx,y,w,tagH,23); ctx.fill();
+    ctx.strokeStyle='#f0d5b8'; ctx.stroke();
+    ctx.fillStyle='#9a6b3a';
+    ctx.fillText(t, tx+w/2, y+31);
+    tx+=w+tagGap;
+  });
+  y+=tagH+50;
+
+  /* 硬度 */
+  ctx.fillStyle='#e2601f';
+  roundRect(ctx,PAD,y,W-PAD*2,120,20); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='800 60px sans-serif';
+  ctx.fillText(lastHardness+' 分', W/2, y+66);
+  ctx.font='20px sans-serif'; ctx.globalAlpha=.9;
+  ctx.fillText('饭碗硬度指数 · 越高说明你的饭碗越抗造', W/2, y+98);
+  ctx.globalAlpha=1; y+=160;
+
+  /* 五维条形 */
+  ctx.textAlign='left';
+  ctx.fillStyle='#d9531e'; ctx.font='700 24px sans-serif';
+  ctx.fillText('▍你的五维饭碗构成', PAD, y+10); y+=50;
+  DIM_ORDER.forEach((d,i)=>{
+    ctx.fillStyle='#8a6f4d'; ctx.font='600 20px sans-serif';
+    ctx.fillText(DIMS[d], PAD, y+16);
+    const bx=PAD+90, bw=W-PAD*2-90-70;
+    ctx.fillStyle='#f0e4d2';
+    roundRect(ctx,bx,y,bw,14,7); ctx.fill();
+    ctx.fillStyle='#d9531e';
+    if(lastPcts[i]>0){ roundRect(ctx,bx,y,Math.max(14,bw*lastPcts[i]/100),14,7); ctx.fill(); }
+    ctx.fillStyle='#b9a88f'; ctx.font='18px sans-serif';
+    ctx.fillText(lastPcts[i]+'%', W-PAD-40, y+16);
+    y+=36;
+  });
+  y+=36;
+
+  /* 各段落 */
+  function section(title, lines, color, lh){
+    ctx.fillStyle=color; ctx.font='700 24px sans-serif';
+    ctx.fillText('▍'+title, PAD, y+10); y+=52;
+    ctx.fillStyle='#5c4630'; ctx.font='22px sans-serif';
+    lines.forEach(l=>{ ctx.fillText(l, PAD+14, y+22); y+=lh; });
+    y+=26;
+  }
+  section('人设分析', descLines, '#d9531e', 38);
+  section('🍚 你的饭碗长这样', bowlLines, '#d9531e', 36);
+  section('⚠️ 给你的风险提示', riskLines, '#b07b2e', 36);
+  section('🧭 你的躺赢路径', pathLines, '#d9531e', 36);
+
+  /* 金句 */
+  ctx.fillStyle='#3a2c1e';
+  roundRect(ctx,PAD,y,W-PAD*2,sayLines.length*40+40,16); ctx.fill();
+  ctx.fillStyle='#ffe9d6'; ctx.font='600 24px sans-serif'; ctx.textAlign='center';
+  sayLines.forEach((l,i)=>ctx.fillText(l, W/2, y+42+i*40));
+  y+=sayLines.length*40+70;
+
+  /* 底部 */
+  const dt=new Date();
+  ctx.fillStyle='#b9a88f'; ctx.font='18px sans-serif';
+  ctx.fillText(dt.getFullYear()+'.'+(dt.getMonth()+1)+'.'+dt.getDate()+' · 趣味心理测试 · 仅供娱乐参考', W/2, y+20);
+
+  return cv.toDataURL('image/png');
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function openLongImage(){
+  const dataUrl=drawLongImage();
+  $('longImg').src=dataUrl;
+  const isWeChat=/MicroMessenger/i.test(navigator.userAgent);
+  $('imgTip').textContent = isWeChat
+    ? '长按图片 → 保存到手机相册'
+    : '手机浏览器：长按图片可存入相册；也可点下方下载';
+  $('btnOvDownload').style.display = isWeChat ? 'none' : '';
+  $('imgOverlay').classList.add('open');
+}
+function downloadLongImage(){
+  const a=document.createElement('a');
+  a.href=$('longImg').src;
+  a.download='饭碗测评报告.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ===== 5. 复制结果链接 ===== */
+function buildResultUrl(){
+  const u=new URL(location.origin+location.pathname);
+  u.searchParams.set('r',lastResultKey);
+  u.searchParams.set('h',lastHardness);
+  u.searchParams.set('d',lastPcts.join(','));
+  return u.toString();
+}
+async function copyResultLink(){
+  const url=buildResultUrl();
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('链接已复制，快去分享吧');
+  }catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=url; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove();
+    toast('链接已复制，快去分享吧');
+  }
+}
+
+/* ===== 结果直链（分享打开） ===== */
+function tryLoadFromUrl(){
+  const p=new URLSearchParams(location.search);
+  const rk=p.get('r');
+  if(!rk || !RESULTS[rk]) return false;
+  const h=Math.min(98,Math.max(30,parseInt(p.get('h'))||50));
+  const d=(p.get('d')||'').split(',').map(n=>Math.min(100,Math.max(0,parseInt(n)||0)));
+  if(d.length!==5) return false;
+  renderResultUI(rk,h,d);
+  return true;
+}
+
+/* ===== 事件绑定 ===== */
+$('btnVerify').addEventListener('click',verifyPwd);
+$('pwdInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verifyPwd(); });
+$('btnStart').addEventListener('click',()=>{
+  current=0; renderQ(); showPage('quiz');
+});
+$('btnPrev').addEventListener('click',goPrev);
+$('btnSaveImg').addEventListener('click',openLongImage);
+$('btnOvClose').addEventListener('click',()=>$('imgOverlay').classList.remove('open'));
+$('btnOvDownload').addEventListener('click',downloadLongImage);
+$('btnCopyLink').addEventListener('click',copyResultLink);
+$('btnOthers').addEventListener('click',()=>$('others').classList.toggle('open'));
+$('mClose').addEventListener('click',()=>$('modalMask').classList.remove('open'));
+$('giftFab').addEventListener('click',()=>$('giftMask').classList.add('open'));
+$('giftClose').addEventListener('click',()=>$('giftMask').classList.remove('open'));
+
+/* 再测一次：先查剩余次数 */
+$('btnAgain').addEventListener('click',async ()=>{
+  if(!myPassword){
+    openModal('提示','你正在查看别人的分享结果。<br>想测自己的饭碗？回到首页输入密码开始～');
+    return;
+  }
+  const r=await api('/api/verify',{password:myPassword});
+  if(!r.ok){ openModal('机会用完', r.message+'<br><br>如需继续测评，请获取新密码。'); return; }
+  myRemaining=r.remaining;
+  answers=new Array(QUESTIONS.length).fill(null);
+  current=0;
+  enterCover();
+});
+
+/* 启动：带结果参数 → 直达结果页；否则进密码门 */
+if(!tryLoadFromUrl()){
+  showPage('gate');
+}
+</script>
+</body>
+</html>
