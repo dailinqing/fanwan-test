@@ -110,7 +110,7 @@ begin
     loop
       np := 'FW-' || upper(substr(md5(random()::text), 1, 4)) || '-'
                   || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 4));
-      exit when not exists (select 1 from public.cards where password = np);
+      exit when not exists (select 1 from public.cards where public.cards.password = np);
     end loop;
     insert into public.cards (password) values (np);
     return query select np;
