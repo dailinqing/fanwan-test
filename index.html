@@ -340,7 +340,7 @@
 <div id="toast"></div>
 
 <!-- Supabase JS SDK（公网版：后端/数据库由 Supabase 托管） -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="./supabase-js.js"></script>
 <script>
 /* ===== Supabase 配置（anon key 仅公开权限，可放前端） ===== */
 const SUPABASE_URL = 'https://bdsyhjwesxxbgfzoxcac.supabase.co';
@@ -367,8 +367,7 @@ async function rpcCall(fn, args, tries){
 async function api(path, data){
   const fn = path === '/api/finish' ? 'consume_card' : 'check_card';
   return rpcCall(fn, { p_password: (data||{}).password || '' }, 2);
-}
-</script>
+}</script>
 <script>
 /* ===== 测评数据 ===== */
 const DIMS = {G:"实干力",B:"表达力",M:"稳健力",R:"人脉力",C:"归园力"};
@@ -571,17 +570,6 @@ function openModal(title, body){
   $('mTitle').textContent=title; $('mBody').innerHTML=body;
   $('modalMask').classList.add('open');
 }
-async function api(path, data){
-  try{
-    const r = await fetch(path, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(data||{})
-    });
-    return await r.json();
-  }catch(e){ return {ok:false, message:'网络异常，请稍后再试'}; }
-}
-
 /* ===== 1. 密码门 ===== */
 async function verifyPwd(){
   const pwd = $('pwdInput').value.trim().toUpperCase();
