@@ -347,16 +347,26 @@ const SUPABASE_URL = 'https://bdsyhjwesxxbgfzoxcac.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_itpxK_FH2Qhxc9YCgnWkVQ_mvQMKtHv';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* 兼容层：把原 /api/* 请求映射到 Supabase RPC */
-async function api(path, data){
+/* 兼容层：把原 /api/* 请求映射到 Supabase RPC（网络失败自动重试 1 次） */
+async function rpcCall(fn, args, tries){
   try{
-    const fn = path === '/api/finish' ? 'consume_card' : 'check_card';
-    const { data: rows, error } = await sb.rpc(fn, { p_password: (data||{}).password || '' });
+    const { data: rows, error } = await sb.rpc(fn, args);
     if(error){ return { ok:false, message:'服务开小差了，请稍后再试' }; }
     const row = Array.isArray(rows) ? rows[0] : rows;
     if(!row){ return { ok:false, message:'服务开小差了，请稍后再试' }; }
     return { ok: row.ok, remaining: row.remaining, message: row.message };
-  }catch(e){ return { ok:false, message:'网络异常，请稍后再试' }; }
+  }catch(e){
+    if(tries > 1){
+      await new Promise(r=>setTimeout(r,900));
+      return rpcCall(fn, args, tries-1);
+    }
+    const detail = (e && e.message) ? String(e.message).slice(0,80) : 'fetch failed';
+    return { ok:false, message:'网络异常（'+detail+'）。请稍后重试，或改用手机浏览器／系统浏览器打开本页' };
+  }
+}
+async function api(path, data){
+  const fn = path === '/api/finish' ? 'consume_card' : 'check_card';
+  return rpcCall(fn, { p_password: (data||{}).password || '' }, 2);
 }
 </script>
 <script>
